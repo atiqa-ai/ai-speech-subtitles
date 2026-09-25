@@ -30,7 +30,7 @@ video ──▶ AudioExtractor ──▶ SpeechToText ──▶ UrduTranslator �
 ## Installation
 
 ```bash
-git clone https://github.com/<your-username>/ai-speech-subtitles.git
+git clone https://github.com/atiqa-ai/ai-speech-subtitles.git
 cd ai-speech-subtitles
 
 python -m venv .venv
