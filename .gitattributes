@@ -1,0 +1,10 @@
+# Normalise line endings in the repository, check out LF on every platform.
+* text=auto eol=lf
+
+*.py    text eol=lf
+*.md    text eol=lf
+*.txt   text eol=lf
+*.csv   text eol=lf
+*.ipynb text eol=lf
+.gitignore      text eol=lf
+.gitattributes  text eol=lf

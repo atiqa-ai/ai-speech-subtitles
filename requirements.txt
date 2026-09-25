@@ -1,0 +1,12 @@
+# Core audio / video
+moviepy==2.2.1
+imageio-ffmpeg==0.6.0
+
+# Speech-to-text. Install the CPU-only torch wheel first to avoid pulling in
+# the multi-gigabyte CUDA build:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+torch==2.14.0
+openai-whisper==20250625
+
+# Translation
+openai==2.24.0
