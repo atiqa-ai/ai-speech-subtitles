@@ -127,6 +127,3 @@ python src/subtitle_generator.py
 - Translation quality depends on the model size — `base` is a reasonable speed/accuracy trade-off for clear lecture audio.
 - Costs come from the OpenAI translation API only; transcription runs locally.
 
-## License
-
-MIT
