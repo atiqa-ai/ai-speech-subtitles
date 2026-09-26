@@ -1,0 +1,11 @@
+# Test-only dependencies.
+#
+# Kept separate from requirements.txt so the test suite can run without
+# installing torch and Whisper. The modules under test (translator_module and
+# subtitle_generator) only need the OpenAI SDK plus pytest.
+#
+#   pip install -r requirements-dev.txt
+#   python -m pytest tests/ -q
+
+openai==2.24.0
+pytest==9.1.1

@@ -163,17 +163,33 @@ Translations (one per line):"""
                     )
                 
                 for idx, seg in enumerate(batch):
+                    cleaned_trans = None
+
                     if idx < len(translations):
                         trans = translations[idx]
-                        # Clean translation (remove numbering if present)
-                        cleaned_trans = trans.split('. ', 1)[-1] if '. ' in trans else trans
-                    else:
+                        candidate = trans.split('. ', 1)[-1] if '. ' in trans else trans
+                        # A blank line in the reply is a *missing* translation,
+                        # not a request for an empty subtitle. Treating it as
+                        # present left a visible gap in the subtitle file, so
+                        # blanks are repaired like any other shortfall.
+                        if candidate.strip():
+                            cleaned_trans = candidate
+
+                    if cleaned_trans is None:
                         try:
                             cleaned_trans = self.translate_text(seg.text, seg.language)
                         except Exception as e2:
                             logger.error(f"Repair translation failed: {e2}")
                             cleaned_trans = seg.text
-                    
+
+                    # Last resort: never emit an empty cue.
+                    if not cleaned_trans.strip():
+                        logger.warning(
+                            f"Empty translation for segment {idx + 1}; "
+                            f"falling back to the original text."
+                        )
+                        cleaned_trans = seg.text
+
                     translated_seg = TranslatedSegment(
                         start=seg.start,
                         end=seg.end,

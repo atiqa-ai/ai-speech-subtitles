@@ -24,7 +24,7 @@ video ──▶ AudioExtractor ──▶ SpeechToText ──▶ UrduTranslator �
 
 ## Requirements
 
-- Python 3.9+
+- Python 3.10+ (CI covers 3.10, 3.11, and 3.12)
 - An OpenAI API key (only needed for the translation step)
 
 ## Installation
@@ -113,6 +113,7 @@ Load the `.srt` next to your video — most players (VLC, MPV, YouTube) pick it 
 | `src/translator_module.py` | GPT translation, with batch and fallback handling |
 | `src/subtitle_generator.py` | Builds SRT / WebVTT, wraps lines, validates timing |
 | `src/ffmpeg_setup.py` | Locates an ffmpeg binary (system or bundled) |
+| `tests/` | 42 tests covering translation and subtitle logic |
 
 Each module also runs standalone for quick testing:
 
@@ -120,6 +121,56 @@ Each module also runs standalone for quick testing:
 python src/audio_extractor.py
 python src/subtitle_generator.py
 ```
+
+## Tests
+
+```bash
+pip install -r requirements-dev.txt
+python -m pytest tests/ -q
+```
+
+The test requirements are deliberately minimal. The two modules with real logic
+— `translator_module` and `subtitle_generator` — depend only on the OpenAI SDK,
+so the suite runs in a couple of seconds without installing torch or Whisper.
+
+No test contacts the network or needs an API key: the OpenAI client is replaced
+with a fake that returns canned replies, which is what makes the batching,
+numbering-cleanup, and subtitle-timing behaviour testable at all. One CI step
+runs the whole suite with `OPENAI_API_KEY` set to an empty string to prove it.
+
+Three real bugs were found and fixed while writing these tests:
+
+- **A short batch reply silently dropped subtitles.** If the model returned
+  fewer lines than segments sent, the extra segments were lost, leaving gaps in
+  the file. They are now re-translated individually.
+- **A blank line in the reply produced an empty cue.** Blanks were treated as
+  valid translations, so a subtitle could come out blank. They are now repaired
+  like any other shortfall, and the original text is used as a last resort.
+- **The last segment's timing was never validated.** The overlap check looped
+  to `len-1`, so a final cue with a negative duration slipped through and broke
+  playback. Every segment is now checked.
+
+## Docker
+
+```bash
+docker build -t ai-speech-subtitles .
+docker run --rm -v "$PWD/output:/app/output" -e OPENAI_API_KEY="sk-..." \
+    ai-speech-subtitles lecture.mp4
+```
+
+The image installs the CPU-only torch wheel, so it stays far smaller than a
+default `pip install torch` would produce. `tests/` is included in the image and
+CI runs the suite inside the container, which catches a dependency that works on
+the host but is missing from the image.
+
+## Continuous integration
+
+`.github/workflows/ci.yml` runs on every push:
+
+| Job | What it does |
+| --- | --- |
+| `test` | 42 tests on Python 3.10, 3.11, and 3.12, plus a no-API-key run |
+| `docker` | Builds the image, checks the entry point, runs the suite in the container |
 
 ## Notes
 
