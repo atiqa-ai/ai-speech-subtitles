@@ -3,7 +3,6 @@ Speech-to-Text Module with Automatic Language Detection
 Uses OpenAI Whisper for accurate transcription
 """
 
-import whisper
 import os
 import logging
 from typing import Dict, List, Tuple
@@ -16,6 +15,20 @@ except ImportError:  # running as a standalone script
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+def _whisper():
+    """Import whisper on first use.
+
+    The model itself is already loaded lazily to keep memory down, so the
+    library is imported the same way. This also means
+    `from src.speech_to_text import TranscriptionSegment` - a plain dataclass -
+    does not drag in a multi-hundred-megabyte ML dependency, which is what lets
+    the test suite run without torch and whisper installed.
+    """
+    import whisper
+
+    return whisper
 
 
 @dataclass
@@ -70,7 +83,7 @@ class SpeechToText:
                     "ffmpeg not found. Install it, or run: pip install imageio-ffmpeg"
                 )
             try:
-                self.model = whisper.load_model(self.model_size)
+                self.model = _whisper().load_model(self.model_size)
                 logger.info(f"Whisper {self.model_size} model loaded successfully")
             except Exception as e:
                 logger.error(f"Failed to load model: {e}")
@@ -146,10 +159,10 @@ class SpeechToText:
         
         # Load audio and pad/trim to 30 seconds
         audio = self.load_audio(audio_path)
-        audio = whisper.pad_or_trim(audio)
+        audio = _whisper().pad_or_trim(audio)
         
         # Make log-Mel spectrogram
-        mel = whisper.log_mel_spectrogram(audio).to(self.model.device)
+        mel = _whisper().log_mel_spectrogram(audio).to(self.model.device)
         
         # Detect language
         _, probs = self.model.detect_language(mel)

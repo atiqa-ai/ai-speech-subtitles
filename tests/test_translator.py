@@ -139,3 +139,46 @@ class TestTranslatedSegment:
     def test_target_language_defaults_to_urdu(self):
         seg = TranslatedSegment(0.0, 1.0, "hello", "ہیلو", "en")
         assert seg.target_lang == "ur"
+
+
+class TestLazyHeavyImports:
+    """`import whisper` at module scope used to break the test run in CI.
+
+    The modules under test never transcribe anything, so they should not need
+    torch or whisper installed just to be imported.
+    """
+
+    HEAVY = {"whisper", "torch", "numpy", "moviepy"}
+
+    def test_modules_import_without_the_heavy_dependencies(self):
+        import builtins
+        import importlib
+        import sys
+
+        real_import = builtins.__import__
+
+        def guarded(name, *args, **kwargs):
+            if name.split(".")[0] in self.HEAVY:
+                raise ModuleNotFoundError(f"No module named {name!r}")
+            return real_import(name, *args, **kwargs)
+
+        # Drop the already-imported modules so the import actually re-runs.
+        saved = {
+            name: mod
+            for name, mod in sys.modules.items()
+            if name.split(".")[0] in self.HEAVY or name in ("src.speech_to_text",)
+        }
+        for name in saved:
+            del sys.modules[name]
+
+        builtins.__import__ = guarded
+        try:
+            stt = importlib.import_module("src.speech_to_text")
+            assert stt.TranscriptionSegment(0.0, 1.0, "hi", "en").text == "hi"
+        finally:
+            builtins.__import__ = real_import
+            for name in list(sys.modules):
+                if name.split(".")[0] in self.HEAVY:
+                    del sys.modules[name]
+            for name, mod in saved.items():
+                sys.modules[name] = mod
