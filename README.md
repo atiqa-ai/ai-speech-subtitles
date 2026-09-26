@@ -7,20 +7,20 @@ The pipeline extracts audio from a video, transcribes it with OpenAI Whisper
 GPT, and writes SRT / WebVTT subtitle files.
 
 ```
-video ──▶ AudioExtractor ──▶ SpeechToText ──▶ UrduTranslator ──▶ SubtitleGenerator
+video â”€â”€â–¶ AudioExtractor â”€â”€â–¶ SpeechToText â”€â”€â–¶ UrduTranslator â”€â”€â–¶ SubtitleGenerator
           16 kHz mono WAV     Whisper +         GPT-4o-mini        .srt / .vtt
                                language detect
 ```
 
 ## Features
 
-- **Automatic language detection** — Whisper identifies the language, with a confidence score
-- **Context-aware translation** — tuned for educational and technical content
-- **Batch translation** — segments are translated in batches to cut API cost and latency
-- **Three subtitle formats** — SRT, WebVTT, and a dual-language SRT showing original + translation
-- **Automatic line wrapping** — long lines are wrapped at 42 characters so subtitles stay readable
-- **Timing validation** — overlapping or zero-length cues are detected and reported
-- **No system-wide ffmpeg needed** — falls back to the binary bundled in `imageio-ffmpeg`
+- **Automatic language detection** â€” Whisper identifies the language, with a confidence score
+- **Context-aware translation** â€” tuned for educational and technical content
+- **Batch translation** â€” segments are translated in batches to cut API cost and latency
+- **Three subtitle formats** â€” SRT, WebVTT, and a dual-language SRT showing original + translation
+- **Automatic line wrapping** â€” long lines are wrapped at 42 characters so subtitles stay readable
+- **Timing validation** â€” overlapping or zero-length cues are detected and reported
+- **No system-wide ffmpeg needed** â€” falls back to the binary bundled in `imageio-ffmpeg`
 
 ## Requirements
 
@@ -93,15 +93,15 @@ directory you run from:
 
 ```
 output/
-├── temp/                       intermediate audio (deleted unless --keep-audio)
-│   └── lecture_audio.wav
-└── subtitles/
-    ├── lecture_urdu.srt
-    ├── lecture_urdu.vtt
-    └── lecture_dual.srt
+â”œâ”€â”€ temp/                       intermediate audio (deleted unless --keep-audio)
+â”‚   â””â”€â”€ lecture_audio.wav
+â””â”€â”€ subtitles/
+    â”œâ”€â”€ lecture_urdu.srt
+    â”œâ”€â”€ lecture_urdu.vtt
+    â””â”€â”€ lecture_dual.srt
 ```
 
-Load the `.srt` next to your video — most players (VLC, MPV, YouTube) pick it up automatically.
+Load the `.srt` next to your video â€” most players (VLC, MPV, YouTube) pick it up automatically.
 
 ## Project layout
 
@@ -113,7 +113,7 @@ Load the `.srt` next to your video — most players (VLC, MPV, YouTube) pick it 
 | `src/translator_module.py` | GPT translation, with batch and fallback handling |
 | `src/subtitle_generator.py` | Builds SRT / WebVTT, wraps lines, validates timing |
 | `src/ffmpeg_setup.py` | Locates an ffmpeg binary (system or bundled) |
-| `tests/` | 42 tests covering translation and subtitle logic |
+| `tests/` | 43 tests covering translation and subtitle logic |
 
 Each module also runs standalone for quick testing:
 
@@ -130,7 +130,7 @@ python -m pytest tests/ -q
 ```
 
 The test requirements are deliberately minimal. The two modules with real logic
-— `translator_module` and `subtitle_generator` — depend only on the OpenAI SDK,
+â€” `translator_module` and `subtitle_generator` â€” depend only on the OpenAI SDK,
 so the suite runs in a couple of seconds without installing torch or Whisper.
 
 No test contacts the network or needs an API key: the OpenAI client is replaced
@@ -159,7 +159,8 @@ docker run --rm -v "$PWD/output:/app/output" -e OPENAI_API_KEY="sk-..." \
 ```
 
 The image installs the CPU-only torch wheel, so it stays far smaller than a
-default `pip install torch` would produce. `tests/` is included in the image and
+default `pip install torch` would produce. It is still large â€” roughly 2.4 GB,
+because torch and Whisper are most of it. `tests/` is included in the image and
 CI runs the suite inside the container, which catches a dependency that works on
 the host but is missing from the image.
 
@@ -169,12 +170,12 @@ the host but is missing from the image.
 
 | Job | What it does |
 | --- | --- |
-| `test` | 42 tests on Python 3.10, 3.11, and 3.12, plus a no-API-key run |
+| `test` | 43 tests on Python 3.10, 3.11, and 3.12, plus a no-API-key run |
 | `docker` | Builds the image, checks the entry point, runs the suite in the container |
 
 ## Notes
 
 - Whisper model weights download on first run (~75 MB for `tiny`, ~290 MB for `base`) and are cached afterwards.
-- Translation quality depends on the model size — `base` is a reasonable speed/accuracy trade-off for clear lecture audio.
+- Translation quality depends on the model size â€” `base` is a reasonable speed/accuracy trade-off for clear lecture audio.
 - Costs come from the OpenAI translation API only; transcription runs locally.
 
